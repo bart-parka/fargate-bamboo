@@ -1,0 +1,60 @@
+version: "3.9"
+services:
+  bamboo-server:
+    volumes:
+      - type: volume
+        source: bambooVolume
+        target: /var/atlassian/application-data/bamboo
+    image: atlassian/bamboo-server
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4Gb
+    environment:
+      TINI_SUBREAPER: 1
+    container_name: bamboo-server
+    init: true
+    ports:
+      - "54663:54663"
+      - "8085:8085"
+    x-aws-role:
+      Version: '2012-10-17'
+      Statement:
+      - Effect: Allow
+        Action: ecr:*
+        Resource: arn:aws:ecr:eu-west-2:230373767810:repository/kaniko
+  bamboo-agent:
+    # build:
+    #   dockerfile: Dockerfile
+    #   args:
+    #     AWS_CLI_VERSION: ${AWS_CLI_VERSION}
+    image: 230373767810.dkr.ecr.eu-west-2.amazonaws.com/test:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2Gb
+    volumes:
+      - type: volume
+        source: bambooAgentVolume
+        target: /home/bamboo/bamboo-agent-home
+    environment:
+      TINI_SUBREAPER: 1
+    container_name: bamboo-agent
+    init: true
+    command: "http://bamboo-server:8085/"
+    depends_on:
+      - "bamboo-server"
+
+volumes:
+  bambooVolume:
+    driver_opts:
+      # Access point configuration
+      uid: 0
+      gid: 0
+  bambooAgentVolume:
+    driver_opts:
+      uid: 0
+      gid: 0
+      

@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  bamboo-server: ## MAY NEED TO ADD A HOSTNAME SO THAT THE CLIENT URI IS CORRECTLY POPULATED AND SAVED TO DOCKER VULME
+    volumes:
+      - type: volume
+        source: bambooVolume
+        target: /var/atlassian/application-data/bamboo
+    image: atlassian/bamboo-server
+    environment:
+      TINI_SUBREAPER: 1
+    container_name: bamboo-server
+    init: true
+    ports:
+      - "54663:54663"
+      - "8085:8085"
+  bamboo-agent:
+    build:
+      dockerfile: Dockerfile
+      args:
+        AWS_CLI_VERSION: ${AWS_CLI_VERSION}
+    volumes:
+      - type: volume
+        source: bambooAgentVolume
+        target: /home/bamboo/bamboo-agent-home
+    environment:
+      TINI_SUBREAPER: 1
+    container_name: bamboo-agent
+    init: true
+    command: "http://bamboo-server:8085/"
+    depends_on:
+      - "bamboo-server"
+
+volumes:
+  bambooVolume:
+  bambooAgentVolume:
